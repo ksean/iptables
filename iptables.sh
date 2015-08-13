@@ -38,7 +38,7 @@ do
         echo "Adding ssh(tcp:22) rules"
         $ipt -A INPUT -i eth0 -p tcp --dport 22 -m state --state NEW -m recent --set --name SSHERS
         $ipt -A INPUT -i eth0 -p tcp --dport 22 -m state --state NEW -m recent --update --seconds 300 --hitcount 4 --name SSHERS -j DROP
-        $ipt -A INPUT -i eth0 -p tcp --dport 22 -m state --state NEW -j ACCEPT
+        $ipt -A INPUT -i eth0 -p tcp --dport 22 -m state --state NEW,ESTABLISHED -j ACCEPT
         $ipt -A OUTPUT -o eth0 -p tcp --sport 22 -m state --state ESTABLISHED -j ACCEPT
     fi
 done
