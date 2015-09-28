@@ -34,6 +34,12 @@ do
         $ipt -A OUTPUT -o eth0 -p tcp --sport 25 -m state --state ESTABLISHED -j ACCEPT
     fi
 
+    if [ $var == "dns" ]; then
+        echo "Adding dns(udp:53) rules"
+        $ipt -A INPUT -i eth0 -p udp --dport 53 -m state --state NEW,ESTABLISHED -j ACCEPT
+        $ipt -A OUTPUT -o eth0 -p udp --sport 53 -m state --state ESTABLISHED -j ACCEPT
+    fi
+
     if [ $var == "ssh" ]; then
         echo "Adding ssh(tcp:22) rules"
         $ipt -A INPUT -i eth0 -p tcp --dport 22 -m state --state NEW -m recent --set --name SSHERS
