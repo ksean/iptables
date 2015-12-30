@@ -46,6 +46,12 @@ do
         $ipt -A OUTPUT -p tcp --dport 587 -j ACCEPT
     fi
 
+    if [ $var == "smtps" ]; then
+        echo "Adding smtp(tcp:465) rules"
+        $ipt -A INPUT -p tcp --dport 465 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+        $ipt -A OUTPUT -p tcp --dport 465 -j ACCEPT
+    fi
+
     if [ $var == "dns" ]; then
         echo "Adding dns(udp:53) rules"
         $ipt -A OUTPUT -p udp --dport 53 -j ACCEPT
@@ -61,7 +67,6 @@ do
         $ipt -A OUTPUT -p tcp --dport 22 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
     fi
 
-	
     if [ $var == "postgres" ]; then
         echo "Adding postgres(tcp:5432) rules"
         $ipt -A INPUT -p tcp --dport 5432 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
