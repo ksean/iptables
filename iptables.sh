@@ -2,6 +2,20 @@
 
 ipt=/sbin/iptables
 
+# Define supported services
+DNS=53
+HTTP=80
+HTTP=443
+IMAP=143
+IMAPS=993
+MYSQL=3306
+POP3=110
+POP3S=995
+POSTGRES=5432
+SMTP=25
+SMTPS=465
+SSH=22
+
 echo "Flush current rules"
 $ipt -F
 
@@ -23,60 +37,46 @@ $ipt -A OUTPUT -m conntrack --ctstate ESTABLISHED -j ACCEPT
 echo "Drop invalid packets"
 $ipt -A INPUT -m conntrack --ctstate INVALID -j DROP
 
+# Incoming rule
+# $1    name
+# $2    protocol
+# $3    port
+add_incoming() {
+    echo "Adding incoming $1($2:$3) rules"
+    $ipt -A INPUT -p $2 --dport $3 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+    $ipt -A OUTPUT -p $2 --sport $3 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+}
+
+# Outgoing rule
+# $1    name
+# $2    protocol
+# $3    port
+add_outgoing() {
+    echo "Adding outgoing $1($2:$3) rules"
+    $ipt -A OUTPUT -p $2 --dport $3 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+}
+
 for var;
 do
+    # Handle special rule cases
     if [ $var == "http" ]; then
-        echo "Adding incoming http(tcp:80) rules"
-        $ipt -A INPUT -p tcp --dport 80 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-        $ipt -A OUTPUT -p tcp --sport 80 -m conntrack --ctstate ESTABLISHED -j ACCEPT
-        echo "Adding outgoing http(tcp:80) rules"
-        $ipt -A OUTPUT -p tcp --dport 80 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-    fi
-
-    if [ $var == "https" ]; then
-        echo "Adding incoming https(tcp:443) rules"
-        $ipt -A INPUT -p tcp --dport 443 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-        $ipt -A OUTPUT -p tcp --sport 443 -m conntrack --ctstate ESTABLISHED -j ACCEPT
-    fi
-
-    if [ $var == "smtp" ]; then
-        echo "Adding smtp(tcp:25,587) rules"
-        $ipt -A INPUT -p tcp --dport 25 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-        $ipt -A OUTPUT -p tcp --dport 25 -j ACCEPT
+        add_incoming http tcp $HTTP
+        add_outgoing http tcp $HTTP
+    elif [ $var == "smtp" ]; then
+        add_incoming smtp tcp $SMTP
         $ipt -A OUTPUT -p tcp --dport 587 -j ACCEPT
-    fi
-
-    if [ $var == "smtps" ]; then
-        echo "Adding smtp(tcp:465) rules"
-        $ipt -A INPUT -p tcp --dport 465 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-        $ipt -A OUTPUT -p tcp --dport 465 -j ACCEPT
-    fi
-
-    if [ $var == "dns" ]; then
+    elif [ $var == "dns" ]; then
         echo "Adding dns(udp:53) rules"
         $ipt -A OUTPUT -p udp --dport 53 -j ACCEPT
-    fi
-
-    if [ $var == "ssh" ]; then
-        echo "Adding incoming ssh(tcp:22) rules"
+    elif [ $var == "ssh" ]; then
         $ipt -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --set --name SSHERS
         $ipt -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --update --seconds 300 --hitcount 4 --name SSHERS -j DROP
-        $ipt -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-        $ipt -A OUTPUT -p tcp --sport 22 -m conntrack --ctstate ESTABLISHED -j ACCEPT
-        echo "Adding outgoing ssh(tcp:22) rules"
-        $ipt -A OUTPUT -p tcp --dport 22 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-    fi
-
-    if [ $var == "postgres" ]; then
-        echo "Adding postgres(tcp:5432) rules"
-        $ipt -A INPUT -p tcp --dport 5432 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-        $ipt -A OUTPUT -p tcp --sport 5432 -m conntrack --ctstate ESTABLISHED -j ACCEPT
-    fi
-
-    if [ $var == "mysql" ]; then
-        echo "Adding mysql(tcp:3306) rules"
-        $ipt -A INPUT -p tcp --dport 3306 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-        $ipt -A OUTPUT -p tcp --sport 3306 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+        add_incoming ssh tcp $SSH
+        add_outgoing ssh tcp $SSH
+    else
+        # Otherwise default to open incoming via tcp
+        uppercase=${var^^}
+        add_incoming $var tcp ${!uppercase}
     fi
 done
 

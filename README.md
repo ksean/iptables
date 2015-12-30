@@ -17,7 +17,15 @@ http (80)
 
 https (443)
 
+imap (143)
+
+imaps (993)
+
 mysql (3306)
+
+pop3 (110)
+
+pop3s (995)
 
 postgres (5432)
 
