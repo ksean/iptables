@@ -5,7 +5,7 @@ ipt=/sbin/iptables
 # Define supported services
 DNS=53
 HTTP=80
-HTTP=443
+HTTPS=443
 IMAP=143
 IMAPS=993
 MYSQL=3306
