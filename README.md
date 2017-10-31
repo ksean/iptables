@@ -3,41 +3,33 @@ iptables helper shell script
 
 Whitelist style iptables firewall configuration script for simple public traffic rules.
 
-Usage
-====
+## Usage
+iptables must be run as a system administrator.
+`iptables.sh <services>...`
 
-`./iptables.sh ...*services*`
+## Supported Services
 
-Supported Services
-====
-
-dns (53)
-
-http (80)
-
-https (443)
-
-imap (143)
-
-imaps (993)
-
-mysql (3306)
-
-pop3 (110)
-
-pop3s (995)
-
-postgres (5432)
-
-smtp (25,587)
-
-smtps (465)
-
-ssh (22) -- *limit 4 attempts per IP, per 300s*
+| Name | Port(s) | Protocol |
+| ---- | -------:|:--------:|
+| dns | 53 | TCP, UDP |
+| ftp | 20, 21 | TCP |
+| http | 80 | TCP |
+| https | 443 | TCP |
+| icmp | n/a | ICMP |
+| imap | 143 | TCP |
+| imaps | 993 | TCP |
+| mysql | 3306 | TCP |
+| pop3 | 110 | TCP |
+| pop3s | 995 | TCP |
+| postgres | 5432 | TCP |
+| smtp | 25, 587 | TCP |
+| smtps | 465 | TCP |
+| ssh | 22 | TCP |
 
 
-Example
-====
+* ssh *limit 4 attempts per IP, per 300s*
 
-`./iptables.sh http ssh`
 
+## Example
+`chmd +x iptables`
+`iptables.sh http ssh mysql`

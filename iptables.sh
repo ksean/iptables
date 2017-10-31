@@ -1,9 +1,10 @@
-#!/bin/bash +x
+#!/usr/bin/env bash
 
 ipt=/sbin/iptables
 
 # Define supported services
 DNS=53
+FTP=21
 HTTP=80
 HTTPS=443
 IMAP=143
@@ -43,8 +44,8 @@ $ipt -A INPUT -m conntrack --ctstate INVALID -j DROP
 # $3    port
 add_incoming() {
     echo "Adding incoming $1($2:$3) rules"
-    $ipt -A INPUT -p $2 --dport $3 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
-    $ipt -A OUTPUT -p $2 --sport $3 -m conntrack --ctstate ESTABLISHED -j ACCEPT
+    $ipt -A INPUT -p $2 --dport $3 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
+    $ipt -A OUTPUT -p $2 --sport $3 -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 }
 
 # Outgoing rule
@@ -53,30 +54,38 @@ add_incoming() {
 # $3    port
 add_outgoing() {
     echo "Adding outgoing $1($2:$3) rules"
-    $ipt -A OUTPUT -p $2 --dport $3 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+    $ipt -A OUTPUT -p $2 --dport $3 -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
 }
 
 for var;
 do
-    # Handle special rule cases
-    if [ $var == "http" ]; then
-        add_incoming http tcp $HTTP
-        add_outgoing http tcp $HTTP
+    # Additional rule cases
+    if [ $var == "ftp" ]; then
+        # Also port 20
+        add_incoming $var tcp 20
+        add_outgoing $var tcp 20
     elif [ $var == "smtp" ]; then
-        add_incoming smtp tcp $SMTP
-        $ipt -A OUTPUT -p tcp --dport 587 -j ACCEPT
+        # Also port 587
+        add_incoming $var tcp 587
+        add_outgoing $var tcp 587
     elif [ $var == "dns" ]; then
-        echo "Adding dns(udp:53) rules"
-        $ipt -A OUTPUT -p udp --dport 53 -j ACCEPT
+        # Also UDP protocol
+        add_incoming $var udp 53
+        add_outgoing $var udp 53
     elif [ $var == "ssh" ]; then
+        # Add rate limiting to provide minor brute force protection
         $ipt -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --set --name SSHERS
         $ipt -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -m recent --update --seconds 300 --hitcount 4 --name SSHERS -j DROP
-        add_incoming ssh tcp $SSH
-        add_outgoing ssh tcp $SSH
+    fi
+
+    # Alternative rule cases
+    if [ $var == "icmp" ]; then
+        $ipt -A INPUT -p icmp -m conntrack --cstate NEW,ESTABLISHED,RELATED -j ACCEPT
+        $ipt -A OUTPUT -p icmp -m conntrack --cstate NEW,ESTABLISHED,RELATED -j ACCEPT
     else
-        # Otherwise default to open incoming via tcp
         uppercase=${var^^}
         add_incoming $var tcp ${!uppercase}
+        add_outgoing $var tcp ${!uppercase}
     fi
 done
 
