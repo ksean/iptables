@@ -4,7 +4,8 @@ iptables helper shell script
 Whitelist style iptables firewall configuration script for simple public traffic rules.
 
 ## Usage
-iptables must be run as a system administrator.
+iptables must be run as a system administrator, this script depends on the `iptables` binary.
+
 `iptables.sh <services>...`
 
 ## Supported Services
@@ -31,5 +32,6 @@ iptables must be run as a system administrator.
 
 
 ## Example
-`chmd +x iptables`
+`chmod +x iptables`
+
 `iptables.sh http ssh mysql`
