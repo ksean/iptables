@@ -80,8 +80,8 @@ do
 
     # Alternative rule cases
     if [ $var == "icmp" ]; then
-        $ipt -A INPUT -p icmp -m conntrack --cstate NEW,ESTABLISHED,RELATED -j ACCEPT
-        $ipt -A OUTPUT -p icmp -m conntrack --cstate NEW,ESTABLISHED,RELATED -j ACCEPT
+        $ipt -A INPUT -p icmp -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
+        $ipt -A OUTPUT -p icmp -m conntrack --ctstate NEW,ESTABLISHED,RELATED -j ACCEPT
     else
         uppercase=${var^^}
         add_incoming $var tcp ${!uppercase}
