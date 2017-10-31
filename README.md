@@ -34,4 +34,4 @@ iptables must be run as a system administrator, this script depends on the `ipta
 ## Example
 `chmod +x iptables.sh`
 
-`./ptables.sh http ssh mysql`
+`./iptables.sh http ssh mysql`
